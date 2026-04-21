@@ -1,0 +1,738 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary:        #e84a5f;
+  --primary-light:  #ff8a65;
+  --income-color:   #3b82f6;
+  --expense-color:  #e84a5f;
+  --bg:             #f4f4f8;
+  --surface:        #ffffff;
+  --border:         #e8e8ee;
+  --text:           #1a1a2e;
+  --text-sub:       #6b7280;
+  --stats-bg:       #0f0f1a;
+  --stats-surface:  #1a1a2e;
+  --stats-border:   #2a2a3e;
+  --radius-sm:      8px;
+  --radius-md:      14px;
+  --radius-lg:      20px;
+  --shadow-sm:      0 1px 6px rgba(0,0,0,0.06);
+  --shadow-md:      0 4px 20px rgba(0,0,0,0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans JP', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input, select, textarea { font-family: inherit; outline: none; }
+
+/* ─── レイアウト ─── */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--bg);
+  position: relative;
+}
+
+.main-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 120px;
+}
+
+/* ─── ヘッダー ─── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+}
+
+.header-title {
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 14px 0 0;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 8px 0 10px;
+}
+
+.month-nav-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  color: var(--text-sub);
+  transition: background 0.15s;
+}
+.month-nav-btn:hover { background: var(--bg); }
+
+.month-label {
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 100px;
+  text-align: center;
+}
+
+/* ─── サマリーバー ─── */
+.summary-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-top: 1px solid var(--border);
+}
+
+.summary-cell {
+  padding: 8px 0 10px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.summary-cell:last-child { border-right: none; }
+
+.summary-label {
+  font-size: 10px;
+  color: var(--text-sub);
+  margin-bottom: 2px;
+}
+
+.summary-income { font-size: 14px; font-weight: 700; color: var(--income-color); }
+.summary-expense { font-size: 14px; font-weight: 700; color: var(--expense-color); }
+.summary-total { font-size: 14px; font-weight: 700; color: var(--text); }
+
+/* ─── 家計簿リスト ─── */
+.tx-date-group { background: var(--surface); margin-top: 10px; }
+
+.tx-date-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #f9f9fb;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+
+.tx-date-day {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  min-width: 32px;
+}
+
+.tx-date-meta { flex: 1; }
+.tx-date-month { font-size: 11px; color: var(--text-sub); }
+.tx-date-weekday {
+  display: inline-block;
+  font-size: 10px;
+  background: #555;
+  color: white;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-top: 2px;
+}
+.tx-date-weekday.sun { background: var(--expense-color); }
+.tx-date-weekday.sat { background: var(--income-color); }
+
+.tx-date-amounts { text-align: right; font-size: 12px; }
+.tx-date-inc { color: var(--income-color); }
+.tx-date-exp { color: var(--expense-color); }
+
+.tx-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.tx-row:hover { background: #f9f9fb; }
+
+.tx-category {
+  font-size: 10px;
+  color: var(--text-sub);
+  min-width: 48px;
+  line-height: 1.3;
+}
+
+.tx-name {
+  flex: 1;
+  font-size: 14px;
+  padding: 0 10px;
+  color: var(--text);
+}
+
+.tx-amount-income  { font-size: 14px; font-weight: 700; color: var(--income-color); }
+.tx-amount-expense { font-size: 14px; font-weight: 700; color: var(--expense-color); }
+
+/* ─── 統計タブ (ダーク) ─── */
+.stats-bg {
+  background: var(--stats-bg);
+  min-height: 100%;
+  color: #f0f0f0;
+  padding-bottom: 16px;
+}
+
+.stats-header {
+  background: var(--stats-bg);
+  border-bottom: 1px solid var(--stats-border);
+  padding: 14px 16px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.stats-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.stats-month-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  color: #888;
+  transition: background 0.15s;
+}
+.stats-month-btn:hover { background: var(--stats-surface); }
+
+.stats-summary {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 16px;
+}
+.stats-summary-item { text-align: center; }
+.stats-summary-label { font-size: 11px; color: #888; }
+.stats-summary-income { font-size: 18px; font-weight: 700; color: #60a5fa; }
+.stats-summary-expense { font-size: 18px; font-weight: 700; color: #f87171; }
+
+.stats-card {
+  background: var(--stats-surface);
+  border-radius: var(--radius-md);
+  margin: 10px 14px 0;
+  padding: 16px;
+  border: 1px solid var(--stats-border);
+}
+
+.stats-card-title {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* カテゴリ割合リスト */
+.cat-row {
+  display: flex;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--stats-border);
+}
+.cat-row:last-child { border-bottom: none; }
+
+.cat-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 5px;
+  min-width: 40px;
+  text-align: center;
+  color: white;
+}
+
+.cat-name { flex: 1; font-size: 14px; padding: 0 12px; color: #e0e0e0; }
+.cat-amount { font-size: 14px; font-weight: 600; color: #f0f0f0; }
+
+/* ─── 資産タブ ─── */
+.asset-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.asset-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-sub);
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+}
+.asset-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.asset-table tr:hover td { background: #f9f9fb; }
+.asset-table .amount-cell { text-align: right; font-weight: 700; color: var(--primary); }
+
+/* ─── ボトムタブバー ─── */
+.bottom-tab-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 20;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0 10px;
+  font-size: 10px;
+  color: var(--text-sub);
+  transition: color 0.15s;
+  gap: 3px;
+}
+.tab-btn.active { color: var(--primary); }
+
+/* ─── 入力バー ─── */
+.input-float {
+  position: fixed;
+  bottom: 70px;
+  left: 0; right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 16px;
+  z-index: 19;
+}
+
+.input-bar {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border-radius: 28px;
+  padding: 6px 6px 6px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+  border: 1px solid var(--border);
+  gap: 6px;
+}
+
+.input-bar input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  font-size: 15px;
+  background: transparent;
+  color: var(--text);
+  padding: 4px 0;
+}
+
+.input-bar .send-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s, background 0.15s;
+}
+.input-bar .send-btn:hover { transform: scale(1.05); background: #c0374e; }
+.input-bar .send-btn:disabled { background: #ccc; }
+
+.input-mode-toggle {
+  display: flex;
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.input-mode-btn {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+  color: var(--text-sub);
+}
+.input-mode-btn.active-expense { background: var(--expense-color); color: white; }
+.input-mode-btn.active-income  { background: var(--income-color);  color: white; }
+
+/* ─── モーダル ─── */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 100;
+}
+.modal-sheet {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 40px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.modal-handle {
+  width: 40px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.field-label {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.field-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+.field-input:focus { border-color: var(--primary); }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-size: 15px;
+  color: var(--text-sub);
+  background: transparent;
+}
+
+.btn-save {
+  flex: 2;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+}
+
+/* ─── スピナー ─── */
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── Utility ─── */
+.section-card {
+  background: var(--surface);
+  margin: 10px 14px 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+  letter-spacing: 0.3px;
+}
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--primary);
+  color: white;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+/* ─────────────────────────────
+   デスクトップ (≥768px)
+───────────────────────────── */
+
+/* サイドバーはモバイルで非表示 */
+.desktop-sidebar   { display: none; }
+.home-right-panel  { display: none; }
+.app-with-sidebar  { display: contents; }
+
+@media (min-width: 768px) {
+
+  body { background: #f0f2f7; animation: none; }
+
+  /* 外側コンテナ */
+  .app-with-sidebar {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ─── サイドバー ─── */
+  .desktop-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 230px;
+    flex-shrink: 0;
+    background: #0f172a;
+    color: white;
+    height: 100vh;
+    overflow-y: auto;
+    position: relative;
+    z-index: 30;
+  }
+
+  .sidebar-brand {
+    font-size: 20px;
+    font-weight: 800;
+    padding: 28px 24px 20px;
+    letter-spacing: -0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sn-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+  }
+  .sn-item:hover { background: rgba(255,255,255,0.06); color: white; }
+  .sn-item.sn-active { background: var(--primary); color: white; }
+
+  .sidebar-bottom {
+    padding: 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-balance-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .sidebar-balance-label { font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+  .sidebar-balance-amount { font-size: 22px; font-weight: 800; color: white; }
+  .sidebar-logout-btn {
+    width: 100%;
+    padding: 9px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.07);
+    color: #94a3b8;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .sidebar-logout-btn:hover { background: rgba(255,255,255,0.12); color: white; }
+
+  /* ─── メインパネル ─── */
+  .app-layout {
+    flex: 1;
+    max-width: 100%;
+    border-radius: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* モバイル専用UI非表示 */
+  .bottom-tab-bar { display: none; }
+
+  .input-float {
+    position: static;
+    padding: 0 24px 20px;
+    max-width: 100%;
+  }
+
+  .main-scroll-area {
+    padding: 0 0 0 0;
+    gap: 0;
+  }
+
+  /* アプリヘッダー（デスクトップ） */
+  .app-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 24px;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    min-height: 64px;
+  }
+
+  .header-title {
+    padding: 0;
+    font-size: 20px;
+    margin-right: 32px;
+    white-space: nowrap;
+  }
+
+  .month-nav {
+    margin: 0;
+    padding: 0;
+    border: none;
+    flex: 0 0 auto;
+  }
+
+  .summary-bar {
+    flex: 1;
+    display: flex;
+    margin-left: 24px;
+    border: none;
+    border-left: 1px solid var(--border);
+    grid-template-columns: unset;
+  }
+
+  .summary-cell {
+    padding: 0 20px;
+    border: none;
+    border-right: 1px solid var(--border);
+  }
+  .summary-cell:last-child { border-right: none; }
+
+  /* 家計簿 2カラム */
+  .home-columns {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    overflow: hidden;
+  }
+
+  .home-left {
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+
+  .home-right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 20px;
+    gap: 16px;
+    background: var(--bg);
+  }
+
+  .home-right-panel .section-card {
+    margin: 0;
+  }
+
+  /* 統計グリッド */
+  .stats-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 0 16px 16px;
+  }
+
+  .stats-cat-full {
+    padding: 0 16px 16px;
+  }
+
+  /* 資産テーブル */
+  .assets-desktop-wrap {
+    padding: 24px;
+  }
+
+  .asset-table th, .asset-table td {
+    padding: 14px 16px;
+  }
+
+  /* 統計ヘッダー（デスクトップ） */
+  .stats-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    min-height: 64px;
+    background: var(--stats-bg);
+  }
+
+  .stats-header-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+  }
+
+  .stats-month-nav { margin: 0; }
+  .stats-summary { padding: 16px 24px; }
+}
+
