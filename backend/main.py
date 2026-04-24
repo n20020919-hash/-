@@ -23,7 +23,12 @@ allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
 if allowed_origins_str:
     origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
 else:
-    origins = ["http://localhost:3000", "http://localhost:5173", "*"]
+    origins = [
+        "http://localhost:3000", 
+        "http://localhost:5173", 
+        "https://ai-kakeibo-frontend-hash.vercel.app", 
+        "*"
+    ]
 
 app.add_middleware(
     CORSMiddleware,
