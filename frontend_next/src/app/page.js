@@ -20,6 +20,48 @@ function today() { return new Date().toISOString().split('T')[0]; }
 function fmtMonth(k){ const [y,m]=k.split('-'); return `${y}年${parseInt(m)}月`; }
 function shiftMonth(k,delta){ const [y,m]=k.split('-').map(Number); const d=new Date(y,m-1+delta,1); return getMonthKey(d); }
 
+// 日本語金額パーサー（「30万円」→300000、「5千円」→5000 など）
+function parseJPAmount(text) {
+  // 全角数字→半角
+  const norm = text.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+  // 億: (\d+)億(\d{0,8})
+  const okuMatch = norm.match(/(\d[\d,]*)億(\d{0,8})/);
+  if (okuMatch) {
+    const oku = parseInt(okuMatch[1].replace(/,/g,'')) * 100000000;
+    const rest = okuMatch[2] ? parseInt(okuMatch[2]) : 0;
+    return oku + rest;
+  }
+  // 万: (\d+)万(\d{0,4})
+  const manMatch = norm.match(/(\d[\d,]*)万(\d{0,4})/);
+  if (manMatch) {
+    const man = parseInt(manMatch[1].replace(/,/g,'')) * 10000;
+    const rest = manMatch[2] ? parseInt(manMatch[2]) : 0;
+    return man + rest;
+  }
+  // 千: (\d+)千(\d{0,3})
+  const senMatch = norm.match(/(\d[\d,]*)千(\d{0,3})/);
+  if (senMatch) {
+    const sen = parseInt(senMatch[1].replace(/,/g,'')) * 1000;
+    const rest = senMatch[2] ? parseInt(senMatch[2]) : 0;
+    return sen + rest;
+  }
+  // 通常の数字
+  const num = norm.match(/\d[\d,]*/);
+  return num ? parseInt(num[0].replace(/,/g,'')) : 0;
+}
+
+// 日本語金額表現をテキストから除去（店舗名抽出用）
+function removeAmountExpr(text) {
+  // 全角数字→半角
+  const norm = text.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+  return norm
+    .replace(/\d[\d,]*(億[\d,]*)?万[\d,]*(円|えん)?/g, '')
+    .replace(/\d[\d,]*(千[\d,]*)?(円|えん)?/g, '')
+    .replace(/\d[\d,]*(円|えん)?/g, '')
+    .trim();
+}
+
+
 const KW_EXPENSE = {
   '食費':['コーヒー','ランチ','ラーメン','寿司','カフェ','弁当','コンビニ','スーパー','マクドナルド','スタバ','吉野家','お菓子','アイス','アップルパイ','ピザ'],
   '交通費':['電車','バス','タクシー','定期','高速','ガソリン','地下鉄','新幹線'],
@@ -145,23 +187,22 @@ export default function Home(){
   async function handleSubmit(){
     if(!inputText.trim()) return;
     setSubmitting(true);
-    const norm=inputText.replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0));
-    const num=norm.match(/\d[\d,]*/);
-    const amount=num?parseInt(num[0].replace(/,/g,'')):0;
+    const amount = parseJPAmount(inputText);
     if(!amount){setSubmitting(false);alert('金額を含めてください');return;}
     if(inputMode==='expense'){
       try{
         const r=await fetch(`${API_BASE}/analyze-text`,{method:'POST',headers:H(),body:JSON.stringify({text:inputText})});
         if(r.ok){setInputText('');await fetchAll();setSubmitting(false);return;}
       }catch(e){}
-      const store=inputText.replace(/[0-9０-９][\d０-９,，]*(円|えん)?/g,'').trim()||'手動入力';
+      const store=removeAmountExpr(inputText)||'手動入力';
       await fetch(`${API_BASE}/expenses`,{method:'POST',headers:H(),body:JSON.stringify({date:today(),amount,store,category:guessEC(inputText)})});
     } else {
-      const source=inputText.replace(/[0-9０-９][\d０-９,，]*(円|えん)?/g,'').replace(/もらった|受け取った/g,'').trim()||'収入';
+      const source=removeAmountExpr(inputText).replace(/もらった|受け取った/g,'').trim()||'収入';
       await fetch(`${API_BASE}/incomes`,{method:'POST',headers:H(),body:JSON.stringify({date:today(),amount,source,category:guessIC(inputText)})});
     }
     setInputText('');await fetchAll();setSubmitting(false);
   }
+
 
   async function handleImageUpload(e){
     const file=e.target.files[0]; if(!file) return;
