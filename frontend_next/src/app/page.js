@@ -427,27 +427,6 @@ export default function Home(){
     </div>
   );
 
-  // ── 入力バー ──
-  const InputBar = () => (
-    <div className="input-float">
-      <div className="input-bar">
-        <input type="file" accept="image/*" ref={fileRef} onChange={handleImageUpload} style={{display:'none'}}/>
-        <div className="input-mode-toggle">
-          <button className={`input-mode-btn${inputMode==='expense'?' active-expense':''}`} onClick={()=>setInputMode('expense')}>支出</button>
-          <button className={`input-mode-btn${inputMode==='income'?' active-income':''}`}  onClick={()=>setInputMode('income')}>収入</button>
-        </div>
-        <input type="text"
-          placeholder={submitting?'登録中…':inputMode==='expense'?'支出を入力 (例: コーヒー 500)':'収入を入力 (例: 給料 250000)'}
-          value={inputText} onChange={e=>setInputText(e.target.value)} disabled={submitting}
-          onKeyDown={e=>{ if(e.key==='Enter'&&!e.nativeEvent.isComposing){ e.preventDefault(); handleSubmit(); }}}
-        />
-        <button style={{color:'#9ca3af',padding:'4px',flexShrink:0}} onClick={()=>fileRef.current?.click()} disabled={submitting}><Camera size={17}/></button>
-        <button className="send-btn" onClick={handleSubmit} disabled={submitting||!inputText.trim()}>
-          {submitting?<Loader2 size={15} className="spinner"/>:<Send size={15}/>}
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <div className="app-with-sidebar">
@@ -502,7 +481,30 @@ export default function Home(){
                 <div className="home-left"><TxList/></div>
                 <RightPanel/>
               </div>
-              <InputBar/>
+              {/* ── 入力バー（インライン） ── */}
+              <div className="input-float">
+                <div className="input-bar">
+                  <input type="file" accept="image/*" ref={fileRef} onChange={handleImageUpload} style={{display:'none'}}/>
+                  <div className="input-mode-toggle">
+                    <button className={`input-mode-btn${inputMode==='expense'?' active-expense':''}`} onClick={()=>setInputMode('expense')}>支出</button>
+                    <button className={`input-mode-btn${inputMode==='income'?' active-income':''}`} onClick={()=>setInputMode('income')}>収入</button>
+                  </div>
+                  <input
+                    type="text"
+                    id="main-input"
+                    autoComplete="off"
+                    placeholder={submitting?'登録中…':inputMode==='expense'?'支出を入力 (例: コーヒー 500)':'収入を入力 (例: 給料 250000)'}
+                    value={inputText}
+                    onChange={e=>setInputText(e.target.value)}
+                    disabled={submitting}
+                    onKeyDown={e=>{ if(e.key==='Enter'&&!e.nativeEvent.isComposing){ e.preventDefault(); handleSubmit(); }}}
+                  />
+                  <button style={{color:'#9ca3af',padding:'4px',flexShrink:0}} onClick={()=>fileRef.current?.click()} disabled={submitting}><Camera size={17}/></button>
+                  <button className="send-btn" onClick={handleSubmit} disabled={submitting||!inputText.trim()}>
+                    {submitting?<Loader2 size={15} className="spinner"/>:<Send size={15}/>}
+                  </button>
+                </div>
+              </div>
             </>
           )}
 
