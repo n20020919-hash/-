@@ -219,8 +219,8 @@ export default function Home(){
     if(!editTx) return;
     const url=editTx.type==='expense'?`${API_BASE}/expenses/${editTx.id}`:`${API_BASE}/incomes/${editTx.id}`;
     const body=editTx.type==='expense'
-      ?{date:editTx.date,amount:parseFloat(editTx.amount),store:editTx.store,category:editTx.category}
-      :{date:editTx.date,amount:parseFloat(editTx.amount),source:editTx.store,category:editTx.category};
+      ?{date:editTx.date,amount:parseFloat(editTx.amount),store:editTx.store,category:editTx.category,asset_id:editTx.asset_id||null}
+      :{date:editTx.date,amount:parseFloat(editTx.amount),source:editTx.store,category:editTx.category,asset_id:editTx.asset_id||null};
     await fetch(url,{method:'PATCH',headers:H(),body:JSON.stringify(body)});
     setEditTx(null);await fetchAll();
   }
@@ -666,6 +666,12 @@ export default function Home(){
           <Field label="カテゴリ">
             <select className="field-input" value={editTx.category} onChange={e=>setEditTx({...editTx,category:e.target.value})}>
               {(editTx.type==='expense'?EXPENSE_CATS:INCOME_CATS).map(c=><option key={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="対象資産">
+            <select className="field-input" value={editTx.asset_id||''} onChange={e=>setEditTx({...editTx,asset_id:e.target.value?parseInt(e.target.value):null})}>
+              <option value="">（デフォルト）</option>
+              {assets.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </Field>
           <Field label="日付"><input className="field-input" type="date" value={editTx.date} onChange={e=>setEditTx({...editTx,date:e.target.value})}/></Field>

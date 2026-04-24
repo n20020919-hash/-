@@ -42,8 +42,10 @@ class Expense(Base):
     store = Column(String, nullable=True)
     category = Column(String, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
+    asset_id = Column(Integer, ForeignKey("assets.id"), nullable=True)
     
     owner = relationship("User", back_populates="expenses")
+    asset = relationship("Asset")
 
 class Income(Base):
     __tablename__ = "incomes"
@@ -54,8 +56,10 @@ class Income(Base):
     source = Column(String, nullable=True)      # 収入源（給料、副業、etc.）
     category = Column(String, nullable=True)    # 給与、ボーナス、副業、その他
     user_id = Column(Integer, ForeignKey("users.id"))
+    asset_id = Column(Integer, ForeignKey("assets.id"), nullable=True)
     
     owner = relationship("User", back_populates="incomes")
+    asset = relationship("Asset")
 
 class Asset(Base):
     __tablename__ = "assets"

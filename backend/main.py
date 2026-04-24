@@ -17,6 +17,28 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def upgrade_db_schema():
+    try:
+        from models import engine
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            # SQLite does not support IF NOT EXISTS in ALTER TABLE add column, so we just catch the exception
+            try:
+                conn.execute(text("ALTER TABLE expenses ADD COLUMN asset_id INTEGER REFERENCES assets(id)"))
+                conn.commit()
+            except Exception:
+                pass
+            try:
+                conn.execute(text("ALTER TABLE incomes ADD COLUMN asset_id INTEGER REFERENCES assets(id)"))
+                conn.commit()
+            except Exception:
+                pass
+    except Exception as e:
+        print("Schema upgrade skipped or failed:", e)
+
+upgrade_db_schema()
+
+
 app = FastAPI(title="AI Account Book API")
 
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
@@ -87,6 +109,7 @@ class ExpenseCreate(BaseModel):
     amount: float
     store: str
     category: str
+    asset_id: Optional[int] = None
 
 class ExpenseResponse(ExpenseCreate):
     id: int
@@ -99,6 +122,7 @@ class IncomeCreate(BaseModel):
     amount: float
     source: str
     category: str
+    asset_id: Optional[int] = None
 
 class IncomeResponse(IncomeCreate):
     id: int
@@ -243,13 +267,42 @@ def analyze_text_endpoint(req: TextAnalyzeRequest, current_user: User = Depends(
         amount=float(amount_val),
         store=store_name,
         category=category_val,
-        user_id=current_user.id
+        user_id=current_user.id,
+        asset_id=None
     )
     db.add(db_expense)
     db.commit()
     db.refresh(db_expense)
     
+    default_asset = None
+    if not db_expense.asset_id:
+        default_asset = _get_or_create_default_asset(db, current_user.id)
+        db_expense.asset_id = default_asset.id
+        db.commit()
+        db.refresh(db_expense)
+        
+    _apply_asset_delta(db, current_user.id, db_expense.asset_id, -float(amount_val))
+    
     return {"status": "success", "data": analyzed_data, "saved": True, "id": db_expense.id}
+
+def _get_or_create_default_asset(db: Session, user_id: int) -> Asset:
+    asset = db.query(Asset).filter(Asset.user_id == user_id).order_by(Asset.id.asc()).first()
+    if not asset:
+        asset = Asset(name="現金", amount=0, note="自動作成", user_id=user_id)
+        db.add(asset)
+        db.commit()
+        db.refresh(asset)
+    return asset
+
+def _apply_asset_delta(db: Session, user_id: int, asset_id: Optional[int], delta_amount: float):
+    if asset_id:
+        asset = db.query(Asset).filter(Asset.id == asset_id, Asset.user_id == user_id).first()
+    else:
+        asset = _get_or_create_default_asset(db, user_id)
+    
+    if asset:
+        asset.amount += delta_amount
+        db.commit()
 
 @app.post("/api/expenses", response_model=ExpenseResponse)
 def create_expense(expense: ExpenseCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -265,12 +318,22 @@ def create_expense(expense: ExpenseCreate, current_user: User = Depends(get_curr
         amount=expense.amount,
         store=expense.store,
         category=category,
-        user_id=current_user.id
+        user_id=current_user.id,
+        asset_id=expense.asset_id
     )
     db.add(db_expense)
     db.commit()
     db.refresh(db_expense)
+    
+    if not db_expense.asset_id:
+        default_asset = _get_or_create_default_asset(db, current_user.id)
+        db_expense.asset_id = default_asset.id
+        db.commit()
+        db.refresh(db_expense)
+        
+    _apply_asset_delta(db, current_user.id, db_expense.asset_id, -expense.amount)
     return db_expense
+
 
 @app.get("/api/expenses", response_model=List[ExpenseResponse])
 def get_expenses(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -282,12 +345,20 @@ def update_expense(expense_id: int, expense: ExpenseCreate, current_user: User =
     db_expense = db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == current_user.id).first()
     if not db_expense:
         raise HTTPException(status_code=404, detail="Expense not found")
+        
+    # 古い金額をアセットに戻す
+    _apply_asset_delta(db, current_user.id, db_expense.asset_id, db_expense.amount)
+    
     db_expense.date = expense.date
     db_expense.amount = expense.amount
     db_expense.store = expense.store
     db_expense.category = expense.category
+    db_expense.asset_id = expense.asset_id
     db.commit()
     db.refresh(db_expense)
+    
+    # 新しい金額をアセットから引く
+    _apply_asset_delta(db, current_user.id, db_expense.asset_id, -expense.amount)
     return db_expense
 
 @app.delete("/api/expenses/{expense_id}")
@@ -295,6 +366,9 @@ def delete_expense(expense_id: int, current_user: User = Depends(get_current_use
     db_expense = db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == current_user.id).first()
     if not db_expense:
         raise HTTPException(status_code=404, detail="Expense not found")
+        
+    _apply_asset_delta(db, current_user.id, db_expense.asset_id, db_expense.amount)
+    
     db.delete(db_expense)
     db.commit()
     return {"status": "success", "message": "Expense deleted"}
@@ -308,11 +382,20 @@ def create_income(income: IncomeCreate, current_user: User = Depends(get_current
         amount=income.amount,
         source=income.source,
         category=income.category,
-        user_id=current_user.id
+        user_id=current_user.id,
+        asset_id=income.asset_id
     )
     db.add(db_income)
     db.commit()
     db.refresh(db_income)
+    
+    if not db_income.asset_id:
+        default_asset = _get_or_create_default_asset(db, current_user.id)
+        db_income.asset_id = default_asset.id
+        db.commit()
+        db.refresh(db_income)
+        
+    _apply_asset_delta(db, current_user.id, db_income.asset_id, income.amount)
     return db_income
 
 @app.get("/api/incomes", response_model=List[IncomeResponse])
@@ -324,12 +407,20 @@ def update_income(income_id: int, income: IncomeCreate, current_user: User = Dep
     db_income = db.query(Income).filter(Income.id == income_id, Income.user_id == current_user.id).first()
     if not db_income:
         raise HTTPException(status_code=404, detail="Income not found")
+        
+    # 古い金額をアセットから引く
+    _apply_asset_delta(db, current_user.id, db_income.asset_id, -db_income.amount)
+    
     db_income.date = income.date
     db_income.amount = income.amount
     db_income.source = income.source
     db_income.category = income.category
+    db_income.asset_id = income.asset_id
     db.commit()
     db.refresh(db_income)
+    
+    # 新しい金額をアセットに足す
+    _apply_asset_delta(db, current_user.id, db_income.asset_id, income.amount)
     return db_income
 
 @app.delete("/api/incomes/{income_id}")
@@ -337,6 +428,9 @@ def delete_income(income_id: int, current_user: User = Depends(get_current_user)
     db_income = db.query(Income).filter(Income.id == income_id, Income.user_id == current_user.id).first()
     if not db_income:
         raise HTTPException(status_code=404, detail="Income not found")
+        
+    _apply_asset_delta(db, current_user.id, db_income.asset_id, -db_income.amount)
+    
     db.delete(db_income)
     db.commit()
     return {"status": "success"}
