@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, Loader2, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, BookOpen, BarChart3, Database, Camera, LogOut } from 'lucide-react';
+import { Send, Loader2, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, BookOpen, BarChart3, Database, Camera, LogOut, HelpCircle } from 'lucide-react';
 import {
   Chart as ChartJS, ArcElement, Tooltip, Legend,
   CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title,
@@ -437,6 +437,7 @@ export default function Home(){
         <nav className="sidebar-nav">
           {[
             {id:'home', icon:BookOpen,  label:'家計簿'},
+            {id:'manual', icon:HelpCircle, label:'使い方'},
             {id:'stats',icon:BarChart3, label:'統計'},
             {id:'assets',icon:Database, label:'資産'},
           ].map(({id,icon:Icon,label})=>(
@@ -506,6 +507,39 @@ export default function Home(){
                 </div>
               </div>
             </>
+          )}
+
+          {/* ── 使い方タブ ── */}
+          {tab==='manual'&&(
+            <div className="stats-bg" style={{padding:'20px'}}>
+              <div className="stats-header-title" style={{fontSize:'24px',fontWeight:'800',color:'white',marginBottom:'20px'}}>使い方ガイド</div>
+              <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+                <div className="section-card" style={{padding:'20px',margin:0}}>
+                  <h3 style={{fontSize:'16px',fontWeight:'700',color:'#1a1a2e',marginBottom:'8px'}}>1. テキストで記録する</h3>
+                  <p style={{fontSize:'14px',color:'#4b5563',lineHeight:'1.6'}}>
+                    画面下部の入力バーに、「コーヒー 500」や「ニトリでソファーを買った 30万円」のように自然な日本語で入力して送信するだけ！AIが自動的に品目・金額・カテゴリを判別して記録します。
+                  </p>
+                </div>
+                <div className="section-card" style={{padding:'20px',margin:0}}>
+                  <h3 style={{fontSize:'16px',fontWeight:'700',color:'#1a1a2e',marginBottom:'8px'}}>2. レシート画像で記録する</h3>
+                  <p style={{fontSize:'14px',color:'#4b5563',lineHeight:'1.6'}}>
+                    入力バーのカメラアイコン📷をタップして、レシートや領収書の画像をアップロードできます。AIが画像から日付、店舗名、金額、カテゴリを読み取って自動登録します。
+                  </p>
+                </div>
+                <div className="section-card" style={{padding:'20px',margin:0}}>
+                  <h3 style={{fontSize:'16px',fontWeight:'700',color:'#1a1a2e',marginBottom:'8px'}}>3. データの修正と削除</h3>
+                  <p style={{fontSize:'14px',color:'#4b5563',lineHeight:'1.6'}}>
+                    登録されたデータは、リスト上の項目をタップすることで金額やカテゴリを直接修正できます。また、ゴミ箱アイコン🗑️を押すことで削除できます。
+                  </p>
+                </div>
+                <div className="section-card" style={{padding:'20px',margin:0}}>
+                  <h3 style={{fontSize:'16px',fontWeight:'700',color:'#1a1a2e',marginBottom:'8px'}}>4. 資産の管理</h3>
+                  <p style={{fontSize:'14px',color:'#4b5563',lineHeight:'1.6'}}>
+                    「資産」タブから、銀行口座の残高や手元の現金などの現在持っている総資産を登録でき、家計簿と総合的に資産管理が行えます。
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ── 統計タブ ── */}
@@ -613,7 +647,7 @@ export default function Home(){
 
         {/* ── モバイル用ボトムタブ ── */}
         <div className="bottom-tab-bar">
-          {[{id:'home',icon:BookOpen,label:'家計簿'},{id:'stats',icon:BarChart3,label:'統計'},{id:'assets',icon:Database,label:'資産'}].map(({id,icon:Icon,label})=>(
+          {[{id:'home',icon:BookOpen,label:'家計簿'},{id:'manual',icon:HelpCircle,label:'使い方'},{id:'stats',icon:BarChart3,label:'統計'},{id:'assets',icon:Database,label:'資産'}].map(({id,icon:Icon,label})=>(
             <button key={id} className={`tab-btn${tab===id?' active':''}`} onClick={()=>setTab(id)}>
               <Icon size={22}/><span>{label}</span>
             </button>
